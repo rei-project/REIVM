@@ -234,6 +234,9 @@ export class VM {
   serialize(): VMState;
   deserialize(state: VMState): void;
   
+  // Cloning (for branching/exploration)
+  clone(): VM;
+  
   // Internal (exposed for testing/debugging)
   parse(code: string): string[];
 }
@@ -543,6 +546,7 @@ Create `examples/browser.html`:
 4. **Phase 4: Advanced Features**
    - Tracing support
    - Serialization/deserialization
+   - Cloning support (vm.clone())
    - Error context
 
 5. **Phase 5: Control Flow** (Defer to v0.2 if time-consuming)
