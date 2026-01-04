@@ -5,9 +5,7 @@
  * Words can be either native (implemented as functions) or compiled (arrays of other words).
  */
 
-// Forward declaration to avoid circular dependency
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface VM {}
+import type { VM } from './vm.js';
 
 /**
  * Stack values can be any JavaScript value.
