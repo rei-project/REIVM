@@ -620,7 +620,7 @@ Add to "Core Words" section:
 
 **Upgrade path**:
 ```bash
-npm update @rei-project/reivm
+bun update @rei-project/reivm
 ```
 
 Existing code continues to work. New words are immediately available.

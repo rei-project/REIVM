@@ -337,6 +337,9 @@ bun run type-check
 ```
 REIVM/
 ├── src/
+│   ├── SPEC.md               # Initial implementation specification
+│   ├── SPEC_vn.n.n.md        # Incremental implementation specification
+├── src/
 │   ├── index.ts              # Main export
 │   ├── vm.ts                 # VM class
 │   ├── stack.ts              # Stack implementation
@@ -358,7 +361,6 @@ REIVM/
 │       └── arithmetic.test.ts
 ├── package.json
 ├── tsconfig.json
-├── SPEC.md                   # Implementation specification
 ├── SESSION_ARCHITECTURE.md   # Session & branching design
 └── README.md                 # This file
 ```
