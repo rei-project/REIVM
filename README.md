@@ -439,7 +439,7 @@ REIVM targets modern browsers:
 When implementing features or fixing bugs:
 
 1. Read the [REI Design Principles](https://github.com/rei-project/REI/blob/main/PRINCIPLES.md)
-2. Check [SPEC.md](./SPEC.md) for implementation requirements
+2. Check [SPEC.md](./specs/SPEC.md) for implementation requirements
 3. Ensure all tests pass (`bun test`)
 4. Ensure type checking passes (`bun run type-check`)
 5. Follow the existing code style
