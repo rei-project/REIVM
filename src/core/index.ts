@@ -7,6 +7,9 @@
 
 import { stackOps } from './stack-ops.js';
 import { arithmeticOps } from './arithmetic.js';
+import { stringOps } from './strings.js';
+import { consoleOps } from './console.js';
+import { domOps } from './dom.js';
 import type { Word } from '../word.js';
 
 /**
@@ -15,10 +18,19 @@ import type { Word } from '../word.js';
  * These words are automatically loaded by bootstrapVM() and are marked
  * as protected, meaning they cannot be redefined or forgotten.
  */
-export const CoreWords: Word[] = [...stackOps, ...arithmeticOps];
+export const CoreWords: Word[] = [
+  ...stackOps,
+  ...arithmeticOps,
+  ...stringOps,
+  ...consoleOps,
+  ...domOps,
+];
 
 export default CoreWords;
 
 // Re-export individual word modules for direct access
 export * from './stack-ops.js';
 export * from './arithmetic.js';
+export * from './strings.js';
+export * from './console.js';
+export * from './dom.js';

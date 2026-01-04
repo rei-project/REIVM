@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REIVM v0.1.1 Browser Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #555;
+      margin-top: 30px;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .result {
+      background: #e8f5e9;
+      border-left: 4px solid #4CAF50;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: monospace;
+    }
+    .error {
+      background: #ffebee;
+      border-left: 4px solid #f44336;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: monospace;
+      color: #c62828;
+    }
+    code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+    #output {
+      background: #263238;
+      color: #aed581;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      min-height: 100px;
+      white-space: pre-wrap;
+    }
+    .success {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>REIVM v0.1.1 Browser Test</h1>
+  <p>This page tests the new v0.1.1 features: string operations, console I/O, and DOM primitives.</p>
+
+  <div id="output"></div>
+
+  <div class="test-section">
+    <h2>String Operations</h2>
+    <div id="string-tests"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Console I/O</h2>
+    <div id="console-tests"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>DOM Primitives</h2>
+    <div id="dom-tests"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Generated DOM Elements</h2>
+    <div id="generated-content"></div>
+  </div>
+
+  <script type="module">
+    // Import from the built dist (adjust path as needed for your build output)
+    // For development, you might use src/index.ts directly with appropriate bundling
+    import { bootstrapVM } from '../src/bootstrap.js';
+    import { VM } from '../src/vm.js';
+
+    const output = document.getElementById('output');
+    const stringTests = document.getElementById('string-tests');
+    const consoleTests = document.getElementById('console-tests');
+    const domTests = document.getElementById('dom-tests');
+    const generatedContent = document.getElementById('generated-content');
+
+    function log(message) {
+      output.textContent += message + '\n';
+      console.log(message);
+    }
+
+    function testResult(container, name, passed, details = '') {
+      const div = document.createElement('div');
+      div.className = passed ? 'result' : 'error';
+      div.textContent = `${passed ? '✓' : '✗'} ${name}${details ? ': ' + details : ''}`;
+      container.appendChild(div);
+    }
+
+    try {
+      log('=== REIVM v0.1.1 Browser Tests ===\n');
+
+      const vm = bootstrapVM();
+      log('✓ VM bootstrapped successfully');
+
+      // Test String Operations
+      log('\n--- String Operations ---');
+
+      // CONCAT
+      vm.dataStack.push('Hello');
+      vm.dataStack.push(' World');
+      vm.execute('CONCAT');
+      const concatResult = vm.dataStack.pop();
+      testResult(stringTests, 'CONCAT', concatResult === 'Hello World', concatResult);
+      log(`CONCAT: "${concatResult}"`);
+
+      // LENGTH
+      vm.dataStack.push('Hello');
+      vm.execute('LENGTH');
+      const lengthResult = vm.dataStack.pop();
+      testResult(stringTests, 'LENGTH', lengthResult === 5, lengthResult);
+      log(`LENGTH: ${lengthResult}`);
+
+      // SUBSTRING
+      vm.dataStack.push('Hello World');
+      vm.dataStack.push(0);
+      vm.dataStack.push(5);
+      vm.execute('SUBSTRING');
+      const substringResult = vm.dataStack.pop();
+      testResult(stringTests, 'SUBSTRING', substringResult === 'Hello', substringResult);
+      log(`SUBSTRING: "${substringResult}"`);
+
+      // TO-STRING
+      vm.dataStack.push(42);
+      vm.execute('TO-STRING');
+      const toStringResult = vm.dataStack.pop();
+      testResult(stringTests, 'TO-STRING', toStringResult === '42' && typeof toStringResult === 'string', toStringResult);
+      log(`TO-STRING: "${toStringResult}" (type: ${typeof toStringResult})`);
+
+      // Test Console I/O
+      log('\n--- Console I/O ---');
+      log('(Check browser console for . and EMIT output)');
+
+      // Override console.log temporarily to capture output
+      const originalLog = console.log;
+      let capturedLog = null;
+      console.log = (value) => {
+        capturedLog = value;
+        originalLog(value);
+      };
+
+      vm.dataStack.push(42);
+      vm.execute('.');
+      testResult(consoleTests, '. (print)', capturedLog === 42, `printed ${capturedLog}`);
+
+      console.log = originalLog; // Restore
+
+      vm.dataStack.push(65); // ASCII 'A'
+      vm.execute('EMIT');
+      testResult(consoleTests, 'EMIT', true, 'check console for character "A"');
+      log('EMIT executed (check console)');
+
+      // Test DOM Operations
+      log('\n--- DOM Operations ---');
+
+      // CREATE-ELEMENT
+      vm.dataStack.push('div');
+      vm.execute('CREATE-ELEMENT');
+      const divElement = vm.dataStack.pop();
+      testResult(domTests, 'CREATE-ELEMENT', divElement instanceof HTMLDivElement, 'created div');
+      log('CREATE-ELEMENT: created div');
+
+      // Build a complete element
+      vm.run(`
+        "button" CREATE-ELEMENT
+          "id" "test-button" SET-ATTRIBUTE
+          "class" "btn btn-primary" SET-ATTRIBUTE
+          "Click Me!" SET-TEXT
+      `);
+      const button = vm.dataStack.pop();
+      testResult(domTests, 'SET-ATTRIBUTE (id)', button.id === 'test-button', button.id);
+      testResult(domTests, 'SET-ATTRIBUTE (class)', button.className === 'btn btn-primary', button.className);
+      testResult(domTests, 'SET-TEXT', button.textContent === 'Click Me!', button.textContent);
+      log('Built button with attributes and text');
+
+      // QUERY-SELECTOR
+      vm.dataStack.push('body');
+      vm.execute('QUERY-SELECTOR');
+      const bodyElement = vm.dataStack.pop();
+      testResult(domTests, 'QUERY-SELECTOR', bodyElement === document.body, 'found body');
+      log('QUERY-SELECTOR: found body');
+
+      // Create and append to DOM
+      vm.run(`
+        "div" CREATE-ELEMENT
+          "id" "generated-box" SET-ATTRIBUTE
+          "style" "background: #4CAF50; color: white; padding: 20px; border-radius: 8px; margin: 10px 0;" SET-ATTRIBUTE
+          "This element was created by REIVM!" SET-TEXT
+        "#generated-content" QUERY-SELECTOR
+          APPEND-CHILD
+        DROP
+      `);
+      testResult(domTests, 'APPEND-CHILD', document.getElementById('generated-box') !== null, 'element appended to DOM');
+      log('APPEND-CHILD: appended to #generated-content');
+
+      // Create another example: a list
+      vm.run(`
+        "ul" CREATE-ELEMENT
+          "style" "list-style: none; padding: 0;" SET-ATTRIBUTE
+          "li" CREATE-ELEMENT
+            "style" "background: #2196F3; color: white; padding: 10px; margin: 5px 0; border-radius: 4px;" SET-ATTRIBUTE
+            "Item 1: String Operations" SET-TEXT
+          APPEND-CHILD
+          "li" CREATE-ELEMENT
+            "style" "background: #2196F3; color: white; padding: 10px; margin: 5px 0; border-radius: 4px;" SET-ATTRIBUTE
+            "Item 2: Console I/O" SET-TEXT
+          APPEND-CHILD
+          "li" CREATE-ELEMENT
+            "style" "background: #2196F3; color: white; padding: 10px; margin: 5px 0; border-radius: 4px;" SET-ATTRIBUTE
+            "Item 3: DOM Primitives" SET-TEXT
+          APPEND-CHILD
+        "#generated-content" QUERY-SELECTOR
+          APPEND-CHILD
+        DROP
+      `);
+      log('Created list with nested elements');
+
+      // GET-ATTRIBUTE test
+      const testDiv = document.createElement('div');
+      testDiv.setAttribute('data-test', 'test-value');
+      vm.dataStack.push(testDiv);
+      vm.dataStack.push('data-test');
+      vm.execute('GET-ATTRIBUTE');
+      const attrValue = vm.dataStack.pop();
+      testResult(domTests, 'GET-ATTRIBUTE', attrValue === 'test-value', attrValue);
+      log(`GET-ATTRIBUTE: ${attrValue}`);
+
+      log('\n=== All Tests Complete ===');
+      log('Check the sections above for detailed results.');
+
+    } catch (error) {
+      log(`\n✗ ERROR: ${error.message}`);
+      log(error.stack);
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error';
+      errorDiv.textContent = `Test failed with error: ${error.message}`;
+      output.appendChild(errorDiv);
+    }
+  </script>
+</body>
+</html>

@@ -4,20 +4,20 @@
 
 REIVM is the execution engine at the heart of REI. It provides a simple, observable, and clonable virtual machine that makes computation transparent and explorable.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](package.json)
-[![Tests](https://img.shields.io/badge/tests-182%20passing-brightgreen.svg)](#testing)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](package.json)
+[![Tests](https://img.shields.io/badge/tests-235%20passing-brightgreen.svg)](#testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
 ## Features
 
 - ✅ **Stack-based execution** - All computation flows through observable data stack
-- ✅ **18 CORE words** - Stack operations, arithmetic, and comparisons
+- ✅ **30 CORE words** - Stack operations, arithmetic, strings, console, and DOM
 - ✅ **User-defined words** - Extend the VM with custom compiled words
 - ✅ **Session persistence** - Serialize and restore VM state
 - ✅ **Branching support** - Clone VMs to explore multiple paths
 - ✅ **Browser compatible** - No Node.js dependencies
 - ✅ **Type-safe** - Full TypeScript support with strict mode
-- ✅ **Well-tested** - 182 tests with 100% pass rate
+- ✅ **Well-tested** - 235 tests with 100% pass rate
 
 ## Installation
 
@@ -102,7 +102,7 @@ Tokens are processed left to right:
 
 ## CORE Words
 
-REIVM includes 18 built-in CORE words:
+REIVM includes 30 built-in CORE words:
 
 ### Stack Operations
 
@@ -136,6 +136,35 @@ REIVM includes 18 built-in CORE words:
 | `>` | `( a b -- bool )` | Test greater than |
 | `<=` | `( a b -- bool )` | Test less than or equal |
 | `>=` | `( a b -- bool )` | Test greater than or equal |
+
+### String Operations
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `CONCAT` | `( str1 str2 -- str )` | Concatenate two strings |
+| `LENGTH` | `( str -- n )` | Get string length |
+| `SUBSTRING` | `( str start end -- substr )` | Extract substring |
+| `TO-STRING` | `( value -- str )` | Convert value to string |
+
+### Console I/O
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `.` | `( value -- ) [prints]` | Print any value with newline |
+| `EMIT` | `( char-code -- ) [prints]` | Print single character from code |
+
+**Note**: Other console words like `CR` (newline), `SPACE`, `SPACES` can be defined as user words using these primitives.
+
+### DOM Operations (Browser Only)
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `CREATE-ELEMENT` | `( tag-name -- element )` | Create DOM element |
+| `APPEND-CHILD` | `( parent child -- parent )` | Append child to parent |
+| `SET-ATTRIBUTE` | `( element key value -- element )` | Set element attribute |
+| `SET-TEXT` | `( element text -- element )` | Set text content |
+| `QUERY-SELECTOR` | `( selector -- element\|null )` | Find element by selector |
+| `GET-ATTRIBUTE` | `( element key -- value )` | Get attribute value |
 
 ## API Reference
 
@@ -299,6 +328,82 @@ console.log('Mul result:', mulPath.dataStack.peek()); // 15
 console.log('Base stack:', base.dataStack.snapshot()); // [5, 3]
 ```
 
+### String Manipulation
+
+```typescript
+const vm = bootstrapVM();
+
+// Build a greeting
+vm.dataStack.push('Hello');
+vm.dataStack.push(' ');
+vm.execute('CONCAT');
+vm.dataStack.push('World');
+vm.execute('CONCAT');
+console.log(vm.dataStack.pop()); // "Hello World"
+
+// Get length
+vm.dataStack.push('Hello World');
+vm.execute('LENGTH');
+console.log(vm.dataStack.pop()); // 11
+
+// Extract substring
+vm.dataStack.push('Hello World');
+vm.run('0 5 SUBSTRING');
+console.log(vm.dataStack.pop()); // "Hello"
+```
+
+### Console Output
+
+```typescript
+const vm = bootstrapVM();
+
+// Print a value
+vm.run('42 .');           // Prints: 42
+
+// Print character
+vm.run('65 EMIT');        // Prints: A
+
+// Define CR (newline) as user word
+vm.dictionary.define('CR', {
+  name: 'CR',
+  stackEffect: '( -- )',
+  body: (vm) => {
+    vm.dataStack.push(10);
+    vm.execute('EMIT');
+  },
+  immediate: false,
+  protected: false,
+  category: 'USER',
+  metadata: { defined: new Date(), usageCount: 0 }
+});
+```
+
+### DOM Construction (Browser)
+
+```typescript
+// In browser environment
+const vm = bootstrapVM();
+
+// Get body element
+vm.dataStack.push('body');
+vm.execute('QUERY-SELECTOR');
+
+// Create a button as child
+vm.dataStack.push('button');
+vm.execute('CREATE-ELEMENT');
+vm.dataStack.push('id');
+vm.dataStack.push('my-button');
+vm.execute('SET-ATTRIBUTE');
+vm.dataStack.push('Click me!');
+vm.execute('SET-TEXT');
+
+// Append to body
+vm.execute('APPEND-CHILD');
+vm.execute('DROP');
+
+// Result: <button id="my-button">Click me!</button> added to body
+```
+
 ## Testing
 
 Run the test suite:
@@ -321,16 +426,17 @@ bun run type-check
 
 ### Test Coverage
 
-- **182 tests** across 6 test files
+- **235 tests** across 9 test files
 - **100% pass rate**
 - Tests cover:
   - Stack operations
   - Dictionary operations
-  - All CORE words
+  - All CORE words (arithmetic, strings, console, DOM)
   - VM execution
   - Serialization/deserialization
   - Cloning
   - Integration scenarios
+  - Browser DOM operations (using jsdom)
 
 ## Project Structure
 
@@ -339,7 +445,7 @@ REIVM/
 ├── specs/
 │   ├── SPEC.md               # Initial implementation specification
 │   ├── SESSION_ARCHITECTURE.md # Session & branching design
-│   ├── SPEC_vn.n.n.md        # Incremental implementation specification
+│   └── SPEC_v0.1.1.md        # v0.1.1 specification
 ├── src/
 │   ├── index.ts              # Main export
 │   ├── vm.ts                 # VM class
@@ -351,15 +457,23 @@ REIVM/
 │   └── core/
 │       ├── index.ts          # Core words export
 │       ├── stack-ops.ts      # Stack manipulation words
-│       └── arithmetic.ts     # Arithmetic & comparison words
+│       ├── arithmetic.ts     # Arithmetic & comparison words
+│       ├── strings.ts        # String operations (v0.1.1)
+│       ├── console.ts        # Console I/O (v0.1.1)
+│       └── dom.ts            # DOM primitives (v0.1.1, browser only)
 ├── tests/
 │   ├── stack.test.ts
 │   ├── dictionary.test.ts
 │   ├── vm.test.ts
 │   ├── integration.test.ts
+│   ├── strings.test.ts       # String operations tests
+│   ├── console.test.ts       # Console I/O tests
+│   ├── dom.test.ts           # DOM operations tests
 │   └── core/
 │       ├── stack-ops.test.ts
 │       └── arithmetic.test.ts
+├── examples/
+│   └── browser-test.html     # Browser testing example
 ├── package.json
 ├── tsconfig.json
 └── README.md                 # This file
@@ -398,9 +512,22 @@ REIVM implements the virtual machine as specified in the [REI Framework](https:/
 3. [Technical Specifications](https://github.com/rei-project/REI/blob/main/SPECIFICATIONS.md) - Requirements
 4. [REIVM Component Spec](https://github.com/rei-project/REI/blob/main/components/REIVM.md) - Component requirements
 
-## Version 0.1.0 Scope
+## Version History
 
-This release includes:
+### v0.1.1 (Current)
+
+**New in this release:**
+
+- ✅ **String operations** (4 words) - CONCAT, LENGTH, SUBSTRING, TO-STRING
+- ✅ **Console I/O** (2 words) - `.` (print), EMIT
+- ✅ **DOM primitives** (6 words, browser only) - CREATE-ELEMENT, APPEND-CHILD, SET-ATTRIBUTE, SET-TEXT, QUERY-SELECTOR, GET-ATTRIBUTE
+- ✅ **Browser test example** - Interactive HTML test page
+- ✅ **235 tests** with 100% pass rate
+- ✅ **jsdom integration** for testing DOM operations
+
+### v0.1.0
+
+**Foundation release:**
 
 - ✅ Complete stack implementation
 - ✅ Complete dictionary implementation
@@ -412,18 +539,16 @@ This release includes:
 - ✅ Cloning support
 - ✅ ESM build for Bun and browser
 - ✅ TypeScript type definitions
-- ✅ 182 tests with 100% pass rate
 
-## What's NOT in v0.1.0
+## What's NOT Yet Implemented
 
-These features are deferred to future versions:
+These features are planned for future versions:
 
 - Control flow (IF/THEN/BEGIN/UNTIL) - v0.2.0
 - Source file parsing (REILOADER component) - Future
 - Advanced dictionary operations - Future
 - Tracing support - Optional enhancement
 - REPL interface (that's REIMON's job)
-- DOM integration (that's REIWORD's job)
 
 ## Browser Compatibility
 
@@ -457,4 +582,4 @@ Built with [Bun](https://bun.sh) - a fast all-in-one JavaScript runtime.
 
 ---
 
-**REIVM v0.1.0** - Simple. Observable. Explorable.
+**REIVM v0.1.1** - Simple. Observable. Explorable.

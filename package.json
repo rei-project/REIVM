@@ -10,7 +10,9 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/jsdom": "^27.0.0",
+    "jsdom": "^27.4.0"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
